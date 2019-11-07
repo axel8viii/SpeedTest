@@ -1,8 +1,8 @@
-[![Build Status](https://travis-ci.org/taganaka/SpeedTest.svg?branch=master)](https://travis-ci.org/taganaka/SpeedTest)
+[![Build Status](https://travis-ci.org/axelviii/SpeedTest.svg?branch=master)](https://travis-ci.org/axelviii/SpeedTest)
 
 # SpeedTest++
 
-Yet another unofficial speedtest.net client cli interface
+Yet another unofficial speedtest.net client cli interface, based on https://github.com/taganaka/SpeedTest.
 
 It supports the new (undocumented) raw TCP protocol for better accuracy.
 
@@ -17,6 +17,8 @@ It supports the new (undocumented) raw TCP protocol for better accuracy.
 4. Test supported: Ping / Jitter / Download speed / Upload speed / Packet loss (UDP).
 
 5. Provide a URL to the speedtest.net share results image using option --share
+
+6. Supports JSON output, additionally with number of bytes transferred and enhanced precision for Jitter and Latency
 
 ## Installation
 
