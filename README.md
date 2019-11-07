@@ -56,7 +56,7 @@ Info: https://github.com/taganaka/SpeedTest
 Author: Francesco Laurita <francesco.laurita@gmail.com>
 
 Usage: ./SpeedTest  [--latency] [--quality] [--download] [--upload] [--share] [--help]
-      [--test-server host:port] [--quality-server host:port] [--output verbose|text]
+      [--test-server host:port] [--quality-server host:port] [--output verbose|text|json]
 optional arguments:
   --help                      Show this message and exit
   --latency                   Perform latency test only
@@ -66,7 +66,7 @@ optional arguments:
   --share                     Generate and provide a URL to the speedtest.net share results image
   --test-server host:port     Run speed test against a specific server
   --quality-server host:port  Run line quality test against a specific server
-  --output verbose|text       Set output type. Default: verbose
+  --output verbose|text|json  Set output type. Default: verbose
 $
 ```
 

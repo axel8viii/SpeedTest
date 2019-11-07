@@ -10,8 +10,8 @@
 
 SpeedTest::SpeedTest(float minServerVersion):
         mLatency(0),
-        mUploadSpeed(0),
-        mDownloadSpeed(0) {
+        mUploadSpeed(0, 0),
+        mDownloadSpeed(0, 0) {
     curl_global_init(CURL_GLOBAL_DEFAULT);
     mIpInfo = IPInfo();
     mServerList = std::vector<ServerInfo>();
@@ -83,17 +83,19 @@ bool SpeedTest::setServer(ServerInfo& server){
 
 }
 
-bool SpeedTest::downloadSpeed(const ServerInfo &server, const TestConfig &config, double& result, std::function<void(bool)> cb) {
+bool SpeedTest::downloadSpeed(const ServerInfo &server, const TestConfig &config, double& speed, long& size, std::function<void(bool)> cb) {
     opFn pfunc = &SpeedTestClient::download;
     mDownloadSpeed = execute(server, config, pfunc, cb);
-    result = mDownloadSpeed;
+    speed = mDownloadSpeed.first;
+    size = mDownloadSpeed.second;
     return true;
 }
 
-bool SpeedTest::uploadSpeed(const ServerInfo &server, const TestConfig &config, double& result, std::function<void(bool)> cb) {
+bool SpeedTest::uploadSpeed(const ServerInfo &server, const TestConfig &config, double& speed, long& size, std::function<void(bool)> cb) {
     opFn pfunc = &SpeedTestClient::upload;
     mUploadSpeed = execute(server, config, pfunc, cb);
-    result = mUploadSpeed;
+    speed = mUploadSpeed.first;
+    size = mDownloadSpeed.second;
     return true;
 }
 
@@ -129,14 +131,14 @@ bool SpeedTest::jitter(const ServerInfo &server, long& result, const int sample)
 bool SpeedTest::share(const ServerInfo& server, std::string& image_url) {
     std::stringstream hash;
     hash << std::setprecision(0) << std::fixed << mLatency
-    << "-" << std::setprecision(2) << std::fixed << (mUploadSpeed * 1000)
-    << "-" << std::setprecision(2) << std::fixed << (mDownloadSpeed * 1000)
+    << "-" << std::setprecision(2) << std::fixed << (mUploadSpeed.first * 1000)
+    << "-" << std::setprecision(2) << std::fixed << (mDownloadSpeed.first * 1000)
     << "-" << SPEED_TEST_API_KEY;
     std::string hex_digest = MD5Util::hexDigest(hash.str());
     std::stringstream post_data;
-    post_data << "download=" << std::setprecision(2) << std::fixed << (mDownloadSpeed * 1000) << "&";
+    post_data << "download=" << std::setprecision(2) << std::fixed << (mDownloadSpeed.first * 1000) << "&";
     post_data << "ping=" << std::setprecision(0) << std::fixed << mLatency << "&";
-    post_data << "upload=" << std::setprecision(2) << std::fixed << (mUploadSpeed * 1000) << "&";
+    post_data << "upload=" << std::setprecision(2) << std::fixed << (mUploadSpeed.first * 1000) << "&";
     post_data << "pingselect=1&";
     post_data << "recommendedserverid=" << server.id << "&";
     post_data << "accuracy=1&";
@@ -167,12 +169,13 @@ bool SpeedTest::share(const ServerInfo& server, std::string& image_url) {
 
 // private
 
-double SpeedTest::execute(const ServerInfo &server, const TestConfig &config, const opFn &pfunc, std::function<void(bool)> cb) {
+std::pair<double, long> SpeedTest::execute(const ServerInfo &server, const TestConfig &config, const opFn &pfunc, std::function<void(bool)> cb) {
     std::vector<std::thread> workers;
     double overall_speed = 0;
+    long total_bytes = 0;
     std::mutex mtx;
     for (int i = 0; i < config.concurrency; i++) {
-        workers.push_back(std::thread([&server, &overall_speed, &pfunc, &config, &mtx, cb](){
+        workers.push_back(std::thread([&server, &overall_speed, &total_bytes, &pfunc, &config, &mtx, cb](){
             long start_size = config.start_size;
             long max_size   = config.max_size;
             long incr_size  = config.incr_size;
@@ -222,6 +225,7 @@ double SpeedTest::execute(const ServerInfo &server, const TestConfig &config, co
                 }
                 mtx.lock();
                 overall_speed += (real_sum / iter);
+                total_bytes += total_size;
                 mtx.unlock();
             } else {
                 if (cb)
@@ -236,7 +240,7 @@ double SpeedTest::execute(const ServerInfo &server, const TestConfig &config, co
 
     workers.clear();
 
-    return overall_speed / 1000 / 1000;
+    return std::make_pair(overall_speed / 1000 / 1000, total_bytes);
 }
 
 template<typename T>

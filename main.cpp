@@ -16,7 +16,7 @@ void banner(){
 void usage(const char* name){
     std::cerr << "Usage: " << name << " ";
     std::cerr << " [--latency] [--quality] [--download] [--upload] [--share] [--help]\n"
-            "      [--test-server host:port] [--output verbose|text]\n";
+            "      [--test-server host:port] [--output verbose|text|json]\n";
     std::cerr << "optional arguments:" << std::endl;
     std::cerr << "  --help                      Show this message and exit\n";
     std::cerr << "  --latency                   Perform latency test only\n";
@@ -24,7 +24,7 @@ void usage(const char* name){
     std::cerr << "  --upload                    Perform upload test only. It includes latency test\n";
     std::cerr << "  --share                     Generate and provide a URL to the speedtest.net share results image\n";
     std::cerr << "  --test-server host:port     Run speed test against a specific server\n";
-    std::cerr << "  --output verbose|text       Set output type. Default: verbose\n";
+    std::cerr << "  --output verbose|text|json  Set output type. Default: verbose\n";
 }
 
 int main(const int argc, const char **argv) {
@@ -64,6 +64,15 @@ int main(const int argc, const char **argv) {
         std::cout << "IP: " << info.ip_address
                   << " ( " << info.isp << " ) "
                   << "Location: [" << info.lat << ", " << info.lon << "]" << std::endl;
+    } else if (programOptions.output_type == OutputType::json) {
+        std::cout << "{"
+                  << "\"client\": {"
+//                  << "\"isprating\": \"3.7\""
+                  << "\"ip\": \"" << info.ip_address << "\""
+                  << ", \"isp\": \"" << info.isp << "\""
+                  << ", \"lon\": \"" << info.lat << "\""
+                  << ", \"lat\": \"" << info.lat << "\""
+                  << "}";
     } else {
         std::cout << "IP=" << info.ip_address << std::endl;
         std::cout << "IP_LAT=" << info.lat << std::endl;
@@ -98,6 +107,21 @@ int main(const int argc, const char **argv) {
                       << " by " << serverInfo.sponsor
                       << " (" << serverInfo.distance << " km from you): "
                       << sp.latency() << " ms" << std::endl;
+        } else if (programOptions.output_type == OutputType::json) {
+            std::cout << ", \"server\": {"
+                      << "\"latency\": " << std::fixed << sp.latency()
+                      << ", \"name\": \"" << serverInfo.name << "\""
+                      << ", \"url\": \"" << serverInfo.url << "\""
+                      << ", \"country\": \"" << serverInfo.country << "\""
+                      << ", \"lon\": \"" << serverInfo.lon << "\""
+                      << ", \"cc\": \"" << serverInfo.country_code << "\""
+                      << ", \"host\": \"" << serverInfo.host << "\""
+                      << ", \"sponsor\": \"" << serverInfo.sponsor << "\""
+//                      << ", \"url2\": \"" << serverInfo.url2 << "\""
+                      << ", \"lat\": \"" << serverInfo.lat << "\""
+                      << ", \"id\": \"" << serverInfo.id << "\""
+                      << ", \"d\": " << std::fixed << serverInfo.distance
+                      << "}";
         } else {
             std::cout << "TEST_SERVER_HOST=" << serverInfo.host << std::endl;
             std::cout << "TEST_SERVER_DISTANCE=" << serverInfo.distance << std::endl;
@@ -116,13 +140,14 @@ int main(const int argc, const char **argv) {
 
         if (programOptions.output_type == OutputType::verbose)
             std::cout << "Selected server: " << serverInfo.host << std::endl;
-        else {
+        else if (programOptions.output_type == OutputType::text)
             std::cout << "TEST_SERVER_HOST=" << serverInfo.host << std::endl;
-        }
     }
 
     if (programOptions.output_type == OutputType::verbose)
         std::cout << "Ping: " << sp.latency() << " ms." << std::endl;
+    else if (programOptions.output_type == OutputType::json)
+        std::cout << ", \"ping\": " << std::fixed << sp.latency();
     else
         std::cout << "LATENCY=" << sp.latency() << std::endl;
 
@@ -132,20 +157,25 @@ int main(const int argc, const char **argv) {
     if (sp.jitter(serverInfo, jitter)){
         if (programOptions.output_type == OutputType::verbose)
             std::cout << jitter << " ms." << std::endl;
+        else if (programOptions.output_type == OutputType::json)
+            std::cout << ", \"jitter\": " << std::fixed << jitter;
         else
             std::cout << "JITTER=" << jitter << std::endl;
     } else {
         std::cerr << "Jitter measurement is unavailable at this time." << std::endl;
     }
 
-    if (programOptions.latency)
+    if (programOptions.latency) {
+        if (programOptions.output_type == OutputType::json)
+            std::cout << "}" << std::endl;
         return EXIT_SUCCESS;
-
+    }
 
     if (programOptions.output_type == OutputType::verbose)
         std::cout << "Determine line type (" << preflightConfigDownload.concurrency << ") "  << std::flush;
     double preSpeed = 0;
-    if (!sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, [&programOptions](bool success){
+    long preSize = 0;
+    if (!sp.downloadSpeed(serverInfo, preflightConfigDownload, preSpeed, preSize, [&programOptions](bool success){
         if (programOptions.output_type == OutputType::verbose)
             std::cout << (success ? '.' : '*') << std::flush;
     })){
@@ -171,7 +201,8 @@ int main(const int argc, const char **argv) {
         }
 
         double downloadSpeed = 0;
-        if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, [&programOptions](bool success){
+        long downloadSize = 0;
+        if (sp.downloadSpeed(serverInfo, downloadConfig, downloadSpeed, downloadSize, [&programOptions](bool success){
             if (programOptions.output_type == OutputType::verbose)
                 std::cout << (success ? '.' : '*') << std::flush;
         })){
@@ -181,6 +212,9 @@ int main(const int argc, const char **argv) {
                 std::cout << std::fixed;
                 std::cout << std::setprecision(2);
                 std::cout << downloadSpeed << " Mbit/s" << std::endl;
+            } if (programOptions.output_type == OutputType::json) {
+                std::cout << ", \"download\": " << std::fixed << downloadSpeed * 1000 * 1000;
+                std::cout << ", \"bytes_received\": " << std::fixed << downloadSize;
             } else {
                 std::cout << "DOWNLOAD_SPEED=";
                 std::cout << std::fixed;
@@ -194,14 +228,18 @@ int main(const int argc, const char **argv) {
         }
     }
 
-    if (programOptions.download)
+    if (programOptions.download) {
+        if (programOptions.output_type == OutputType::json)
+            std::cout << "}" << std::endl;
         return EXIT_SUCCESS;
+    }
 
     if (programOptions.output_type == OutputType::verbose)
         std::cout << "Testing upload speed (" << uploadConfig.concurrency << ") "  << std::flush;
 
     double uploadSpeed = 0;
-    if (sp.uploadSpeed(serverInfo, uploadConfig, uploadSpeed, [&programOptions](bool success){
+    long uploadSize = 0;
+    if (sp.uploadSpeed(serverInfo, uploadConfig, uploadSpeed, uploadSize, [&programOptions](bool success){
         if (programOptions.output_type == OutputType::verbose)
             std::cout << (success ? '.' : '*') << std::flush;
     })){
@@ -211,6 +249,9 @@ int main(const int argc, const char **argv) {
             std::cout << std::fixed;
             std::cout << std::setprecision(2);
             std::cout << uploadSpeed << " Mbit/s" << std::endl;
+        } if (programOptions.output_type == OutputType::json) {
+            std::cout << ", \"upload\": " << std::fixed << uploadSpeed * 1000 * 1000;
+            std::cout << ", \"bytes_sent\": " << std::fixed << uploadSize;
         } else {
             std::cout << "UPLOAD_SPEED=";
             std::cout << std::fixed;
@@ -229,11 +270,16 @@ int main(const int argc, const char **argv) {
         if (sp.share(serverInfo, share_it)) {
             if (programOptions.output_type == OutputType::verbose) {
                 std::cout << "Results image: " << share_it << std::endl;
+            } else if (programOptions.output_type == OutputType::json) {
+                std::cout << ", \"share\": \"" << share_it << "\"";
             } else {
                 std::cout << "IMAGE_URL=" << share_it << std::endl;
             }
         }
     }
+
+    if (programOptions.output_type == OutputType::json)
+        std::cout << "}" << std::endl;
 
     return EXIT_SUCCESS;
 }
