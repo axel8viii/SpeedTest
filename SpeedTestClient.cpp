@@ -80,7 +80,7 @@ bool SpeedTestClient::ping(long &millisec) {
     if (SpeedTestClient::readLine(mSocketFd, reply)){
         if (reply.substr(0, 5) == "PONG "){
             auto stop = std::chrono::steady_clock::now();
-            millisec = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+            millisec = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
             return true;
         }
     }

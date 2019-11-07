@@ -106,11 +106,10 @@ int main(const int argc, const char **argv) {
                       << " " << serverInfo.host
                       << " by " << serverInfo.sponsor
                       << " (" << serverInfo.distance << " km from you): "
-                      << sp.latency() << " ms" << std::endl;
+                      << std::setprecision(1) << std::fixed << sp.latency()/1000.0 << " ms" << std::endl;
         } else if (programOptions.output_type == OutputType::json) {
             std::cout << ", \"server\": {"
-                      << "\"latency\": " << std::fixed << sp.latency()
-                      << ", \"name\": \"" << serverInfo.name << "\""
+                      << "\"name\": \"" << serverInfo.name << "\""
                       << ", \"url\": \"" << serverInfo.url << "\""
                       << ", \"country\": \"" << serverInfo.country << "\""
                       << ", \"lon\": \"" << serverInfo.lon << "\""
@@ -121,6 +120,7 @@ int main(const int argc, const char **argv) {
                       << ", \"lat\": \"" << serverInfo.lat << "\""
                       << ", \"id\": \"" << serverInfo.id << "\""
                       << ", \"d\": " << std::fixed << serverInfo.distance
+                      << ", \"latency\": " << std::setprecision(1) << std::fixed << sp.latency()/1000.0
                       << "}";
         } else {
             std::cout << "TEST_SERVER_HOST=" << serverInfo.host << std::endl;
@@ -145,22 +145,22 @@ int main(const int argc, const char **argv) {
     }
 
     if (programOptions.output_type == OutputType::verbose)
-        std::cout << "Ping: " << sp.latency() << " ms." << std::endl;
+        std::cout << "Ping: " << std::setprecision(1) << std::fixed << sp.latency()/1000.0 << " ms." << std::endl;
     else if (programOptions.output_type == OutputType::json)
-        std::cout << ", \"ping\": " << std::fixed << sp.latency();
+        std::cout << ", \"ping\": " << std::setprecision(1) << std::fixed << sp.latency()/1000.0;
     else
-        std::cout << "LATENCY=" << sp.latency() << std::endl;
+        std::cout << "LATENCY=" << std::setprecision(1) << std::fixed << sp.latency()/1000.0 << std::endl;
 
     long jitter = 0;
     if (programOptions.output_type == OutputType::verbose)
         std::cout << "Jitter: " << std::flush;
     if (sp.jitter(serverInfo, jitter)){
         if (programOptions.output_type == OutputType::verbose)
-            std::cout << jitter << " ms." << std::endl;
+            std::cout << std::setprecision(1) << std::fixed << jitter/1000.0 << " ms." << std::endl;
         else if (programOptions.output_type == OutputType::json)
-            std::cout << ", \"jitter\": " << std::fixed << jitter;
+            std::cout << ", \"jitter\": " << std::setprecision(1) << std::fixed << jitter/1000.0;
         else
-            std::cout << "JITTER=" << jitter << std::endl;
+            std::cout << "JITTER=" << std::setprecision(1) << std::fixed << jitter/1000.0 << std::endl;
     } else {
         std::cerr << "Jitter measurement is unavailable at this time." << std::endl;
     }

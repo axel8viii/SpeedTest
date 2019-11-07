@@ -130,14 +130,14 @@ bool SpeedTest::jitter(const ServerInfo &server, long& result, const int sample)
 
 bool SpeedTest::share(const ServerInfo& server, std::string& image_url) {
     std::stringstream hash;
-    hash << std::setprecision(0) << std::fixed << mLatency
+    hash << std::setprecision(0) << std::fixed << mLatency/1000.0
     << "-" << std::setprecision(2) << std::fixed << (mUploadSpeed.first * 1000)
     << "-" << std::setprecision(2) << std::fixed << (mDownloadSpeed.first * 1000)
     << "-" << SPEED_TEST_API_KEY;
     std::string hex_digest = MD5Util::hexDigest(hash.str());
     std::stringstream post_data;
     post_data << "download=" << std::setprecision(2) << std::fixed << (mDownloadSpeed.first * 1000) << "&";
-    post_data << "ping=" << std::setprecision(0) << std::fixed << mLatency << "&";
+    post_data << "ping=" << std::setprecision(0) << std::fixed << mLatency/1000.0 << "&";
     post_data << "upload=" << std::setprecision(2) << std::fixed << (mUploadSpeed.first * 1000) << "&";
     post_data << "pingselect=1&";
     post_data << "recommendedserverid=" << server.id << "&";
