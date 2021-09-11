@@ -53,9 +53,21 @@ const std::vector<ServerInfo>& SpeedTest::serverList() {
         return mServerList;
 
     int http_code = 0;
-    if (fetchServers(SPEED_TEST_SERVER_LIST_URL, mServerList, http_code) && http_code == 200){
-        return mServerList;
-    }
+    fetchServers(SPEED_TEST_SERVER_LIST_URL, mServerList, http_code);
+
+    // set preferred server
+    ServerInfo preferredServer = ServerInfo();
+    preferredServer.name.assign("Kiel");
+    preferredServer.url.assign("http://ookla1.speedtest.tng.de:8080/speedtest/upload.php");
+    preferredServer.country.assign("Germany");
+    preferredServer.country_code.assign("DE");
+    preferredServer.host.assign("ookla1.speedtest.tng.de:8080");
+    preferredServer.sponsor.assign("TNG Stadtnetz GmbH");
+    preferredServer.id = std::atoi("4556");
+    preferredServer.lat = std::stof("54.3253");
+    preferredServer.lon = std::stof("10.1406");
+    mServerList.insert(mServerList.begin(), preferredServer);
+
     return mServerList;
 }
 
