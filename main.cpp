@@ -95,7 +95,7 @@ int main(const int argc, const char **argv) {
             std::cout << serverList.size() << " Servers online" << std::endl;
 
 
-        serverInfo = sp.bestServer(250, [&programOptions](bool success) {
+        serverInfo = sp.bestServer(20, [&programOptions](bool success) {
             if (programOptions.output_type == OutputType::verbose)
                 std::cout << (success ? '.' : '*') << std::flush;
         });
