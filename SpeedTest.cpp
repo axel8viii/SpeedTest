@@ -200,11 +200,13 @@ std::pair<double, long> SpeedTest::execute(const ServerInfo &server, const TestC
             auto spClient = SpeedTestClient(server);
 
             if (spClient.connect()) {
+                long total_size = 0;
                 auto start = std::chrono::steady_clock::now();
                 std::vector<double> partial_results;
                 while (curr_size < max_size){
                     long op_time = 0;
                     if ((spClient.*pfunc)(curr_size, config.buff_size, op_time)) {
+                        total_size += curr_size;
                         double metric = (curr_size * 8) / (static_cast<double>(op_time) / 1000);
                         partial_results.push_back(metric);
                         if (cb)
